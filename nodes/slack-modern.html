@@ -1,7 +1,5 @@
 <script type="text/javascript" id="node-slack-modern">
 	;(function () {
-		const color = '#d7b8e0'
-		const icon = 'font-awesome/fa-slack'
 		const appLabel = function () {
 			const app = RED.nodes.node(this.app)
 			return app ? app.name || 'slack' : 'slack'
@@ -24,8 +22,8 @@
 		RED.nodes.registerType('slack-modern-in', {
 			category: 'slack',
 			paletteLabel: 'slack in',
-			color,
-			icon,
+			color: '#d7b8e0',
+			icon: 'font-awesome/fa-slack',
 			inputs: 0,
 			outputs: 1,
 			outputLabels: 'event',
@@ -44,8 +42,8 @@
 		RED.nodes.registerType('slack-modern-api', {
 			category: 'slack',
 			paletteLabel: 'slack api',
-			color,
-			icon,
+			color: '#d7b8e0',
+			icon: 'font-awesome/fa-slack',
 			align: 'right',
 			inputs: 1,
 			outputs: 1,
@@ -64,8 +62,8 @@
 		RED.nodes.registerType('slack-modern-file', {
 			category: 'slack',
 			paletteLabel: 'slack file',
-			color,
-			icon,
+			color: '#d7b8e0',
+			icon: 'font-awesome/fa-slack',
 			inputs: 1,
 			outputs: 1,
 			inputLabels: 'url',
