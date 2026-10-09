@@ -15,10 +15,10 @@ Classic Slack apps and the RTM API they rely on are being phased out. This packa
 
 ### Example usage ([JSON export](./examples/basic.json))
 
-Reply in a thread to every message:
+Reply in a thread to every message (with **Ignore events caused by this app** enabled in `slack in`):
 
 ```
-[slack in] → [switch: not from bot] → [change: topic = chat.postMessage, payload = {channel, thread_ts: payload.ts, text}] → [slack api]
+[slack in] → [change: topic = chat.postMessage, payload = {channel, thread_ts: payload.ts, text}] → [slack api]
 ```
 
 ## Slack app setup
@@ -76,7 +76,7 @@ settings:
 | `slack-state`          | `slack api` with `users.list`, `conversations.list`, … |                                                                |
 
 > [!WARNING]
-> Messages posted by a modern app do not always carry `subtype: "bot_message"`. Filter bots by checking that `msg.payload.bot_id` is missing, otherwise the app may react to its own replies.
+> Messages posted by a modern app do not always carry `subtype: "bot_message"`. Enable **Ignore events caused by this app** in `slack in` so the app does not react to its own replies, or filter other bots by checking that `msg.payload.bot_id` is missing.
 
 ## Development
 
@@ -84,4 +84,24 @@ settings:
 npm install
 npm run dev # tsc --watch
 npm test
+```
+
+## Releasing
+
+Releases are staged on npm by [GitHub Actions](./.github/workflows/publish.yml) using [trusted publishing](https://docs.npmjs.com/trusted-publishers), so no npm token is stored in the repository.
+
+One-time setup:
+
+```sh
+npm trust github node-red-contrib-slack-modern --repo FilipChalupa/node-red-contrib-slack-modern --file publish.yml --env npm --allow-stage-publish
+```
+
+Release:
+
+```sh
+npm version minor # bumps package.json and creates the v* tag
+git push --follow-tags
+# after the workflow finishes:
+npm stage list node-red-contrib-slack-modern
+npm stage approve <stage-id> # asks for 2FA
 ```

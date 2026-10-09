@@ -14,6 +14,7 @@ interface SlackInNodeConfiguration extends NodeRED.NodeDef {
 	app: string
 	events: string
 	enrich: boolean
+	ignoreOwn?: boolean
 }
 
 interface SlackApiNodeConfiguration extends NodeRED.NodeDef {
@@ -95,6 +96,13 @@ export = function (RED: NodeRED.NodeAPI) {
 				return
 			}
 			try {
+				if (
+					configuration.ignoreOwn === true &&
+					incoming.envelopeType === 'events_api' &&
+					(await slackApp.isOwn(incoming.payload))
+				) {
+					return
+				}
 				const payload =
 					configuration.enrich !== false
 						? await slackApp.enrich(incoming.payload)

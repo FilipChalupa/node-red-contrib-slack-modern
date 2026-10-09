@@ -6,21 +6,8 @@
 		"app": "5d1c1a0e7b2a4c09",
 		"events": "message",
 		"enrich": true,
+		"ignoreOwn": true,
 		"x": 120,
-		"y": 80,
-		"wires": [["5d1c1a0e7b2a4c02"]]
-	},
-	{
-		"id": "5d1c1a0e7b2a4c02",
-		"type": "switch",
-		"name": "Not from bot",
-		"property": "payload.bot_id",
-		"propertyType": "msg",
-		"rules": [{ "t": "null" }],
-		"checkall": "true",
-		"repair": false,
-		"outputs": 1,
-		"x": 300,
 		"y": 80,
 		"wires": [["5d1c1a0e7b2a4c03"]]
 	},
@@ -38,7 +25,7 @@
 				"tot": "jsonata"
 			}
 		],
-		"x": 490,
+		"x": 320,
 		"y": 80,
 		"wires": [["5d1c1a0e7b2a4c04"]]
 	},
@@ -48,7 +35,7 @@
 		"name": "",
 		"app": "5d1c1a0e7b2a4c09",
 		"method": "",
-		"x": 680,
+		"x": 510,
 		"y": 80,
 		"wires": [[]]
 	},

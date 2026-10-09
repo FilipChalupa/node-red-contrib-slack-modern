@@ -26,6 +26,11 @@ const statuses = {
 
 const slackFileHost = /(^|\.)slack\.com$/
 
+export interface SlackIdentity {
+	userId?: string
+	botId?: string
+}
+
 export class SlackApp {
 	readonly web: WebClient
 	private socket: SocketModeClient | null = null
@@ -33,6 +38,7 @@ export class SlackApp {
 	private status: SlackConnectionStatus = statuses.idle
 	private readonly users: LookupCache
 	private readonly channels: LookupCache
+	private identityPromise: Promise<SlackIdentity> | null = null
 
 	constructor(
 		private readonly botToken: string,
@@ -82,6 +88,32 @@ export class SlackApp {
 			...(userObject ? { userObject } : {}),
 			...(channelObject ? { channelObject } : {}),
 		}
+	}
+
+	// Bot user and bot id of this app from auth.test, fetched once
+	identity(): Promise<SlackIdentity> {
+		this.identityPromise ??= this.web.auth.test().then(
+			(response) => ({
+				userId: response.user_id,
+				botId: response.bot_id,
+			}),
+			(error) => {
+				this.identityPromise = null
+				throw error
+			},
+		)
+		return this.identityPromise
+	}
+
+	// True for events caused by this app, e.g. its own messages and reactions
+	async isOwn(payload: Record<string, any>): Promise<boolean> {
+		const { userId, botId } = await this.identity()
+		const authors = [payload, payload.message].filter(Boolean)
+		return authors.some(
+			(author) =>
+				(botId && author.bot_id === botId) ||
+				(userId && author.user === userId),
+		)
 	}
 
 	async download(url: string) {

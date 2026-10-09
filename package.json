@@ -1,6 +1,6 @@
 {
 	"name": "node-red-contrib-slack-modern",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Slack nodes for Node-RED built for modern Slack apps (Socket Mode + Web API)",
 	"scripts": {
 		"build": "tsc",

@@ -171,6 +171,49 @@ describe('node-red-contrib-slack-modern', () => {
 		assert.equal(seen[0].payload.userObject, undefined)
 	})
 
+	it('ignores events caused by the app itself', async () => {
+		await helper.load(
+			slackModern,
+			flow([
+				{
+					id: 'in',
+					type: 'slack-modern-in',
+					app: 'app',
+					enrich: false,
+					ignoreOwn: true,
+					wires: [['out']],
+				},
+			]),
+			credentials,
+		)
+		const app = helper.getNode('app').slackApp
+		let authCalls = 0
+		app.web.auth.test = async () => {
+			authCalls++
+			return { ok: true, user_id: 'U0BOT', bot_id: 'B0BOT' }
+		}
+
+		const out = helper.getNode('out')
+		const seen = []
+		out.on('input', (message) => seen.push(message.payload.ts))
+
+		const events = [
+			{ type: 'message', user: 'U0BOT', bot_id: 'B0BOT', username: 'AI robot', ts: '1' },
+			{ type: 'message', bot_id: 'B0BOT', subtype: 'bot_message', ts: '2' },
+			{ type: 'message', subtype: 'message_changed', message: { bot_id: 'B0BOT' }, ts: '3' },
+			{ type: 'reaction_added', user: 'U0BOT', ts: '4' },
+			{ type: 'message', bot_id: 'B0OTHER', ts: '5' },
+			{ type: 'message', user: 'U1', ts: '6' },
+		]
+		for (const event of events) {
+			socket.deliver('events_api', { event })
+		}
+		await new Promise((resolve) => setTimeout(resolve, 50))
+
+		assert.deepEqual(seen.sort(), ['5', '6'])
+		assert.equal(authCalls, 1)
+	})
+
 	it('calls the method from msg.topic with msg.payload as arguments', async () => {
 		await helper.load(
 			slackModern,

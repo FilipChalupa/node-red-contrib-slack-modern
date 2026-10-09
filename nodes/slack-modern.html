@@ -34,6 +34,7 @@
 				app: { value: '', type: 'slack-modern-app', required: true },
 				events: { value: '' },
 				enrich: { value: true },
+				ignoreOwn: { value: false },
 			},
 			label: function () {
 				return this.name || (this.events ? this.events : appLabel.call(this))
@@ -145,6 +146,13 @@
 			Add <code>userObject</code> and <code>channelObject</code>
 		</label>
 	</div>
+	<div class="form-row">
+		<label for="node-input-ignoreOwn">&nbsp;</label>
+		<label for="node-input-ignoreOwn" style="width: auto">
+			<input type="checkbox" id="node-input-ignoreOwn" style="width: auto" />
+			Ignore events caused by this app
+		</label>
+	</div>
 	<div class="form-tips">Leave events blank to receive all events.</div>
 </script>
 <script type="text/html" data-help-name="slack-modern-in">
@@ -173,6 +181,13 @@
 	<dl class="message-properties">
 		<dt class="optional">Events</dt>
 		<dd>Comma separated event types to pass through. Blank passes everything.</dd>
+		<dt class="optional">Ignore events caused by this app</dt>
+		<dd>
+			Drops the app's own messages (including ones posted with a custom
+			<code>username</code>), edits of them and its own reactions, so a flow
+			cannot reply to itself. The app identity comes from
+			<code>auth.test</code>.
+		</dd>
 	</dl>
 	<h3>Details</h3>
 	<p>
