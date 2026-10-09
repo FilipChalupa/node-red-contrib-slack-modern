@@ -4,6 +4,8 @@ Slack nodes for Node-RED built for **modern Slack apps**. Events arrive over [So
 
 Classic Slack apps and the RTM API they rely on are being phased out. This package replaces RTM based nodes such as `slack-rtm-in` while keeping the same message shape, so existing flows keep working.
 
+![Example flow in the Node-RED editor](https://raw.githubusercontent.com/FilipChalupa/node-red-contrib-slack-modern/main/docs/screenshot.png)
+
 ## Nodes
 
 | Node           | Purpose                                                                                                       |
