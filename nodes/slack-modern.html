@@ -1,0 +1,258 @@
+<script type="text/javascript" id="node-slack-modern">
+	;(function () {
+		const color = '#d7b8e0'
+		const icon = 'font-awesome/fa-slack'
+		const appLabel = function () {
+			const app = RED.nodes.node(this.app)
+			return app ? app.name || 'slack' : 'slack'
+		}
+
+		RED.nodes.registerType('slack-modern-app', {
+			category: 'config',
+			defaults: {
+				name: { value: '' },
+			},
+			credentials: {
+				botToken: { type: 'password', required: true },
+				appToken: { type: 'password' },
+			},
+			label: function () {
+				return this.name || 'slack app'
+			},
+		})
+
+		RED.nodes.registerType('slack-modern-in', {
+			category: 'slack',
+			paletteLabel: 'slack in',
+			color,
+			icon,
+			inputs: 0,
+			outputs: 1,
+			outputLabels: 'event',
+			defaults: {
+				name: { value: '' },
+				app: { value: '', type: 'slack-modern-app', required: true },
+				events: { value: '' },
+				enrich: { value: true },
+			},
+			label: function () {
+				return this.name || (this.events ? this.events : appLabel.call(this))
+			},
+		})
+
+		RED.nodes.registerType('slack-modern-api', {
+			category: 'slack',
+			paletteLabel: 'slack api',
+			color,
+			icon,
+			align: 'right',
+			inputs: 1,
+			outputs: 1,
+			inputLabels: 'arguments',
+			outputLabels: 'response',
+			defaults: {
+				name: { value: '' },
+				app: { value: '', type: 'slack-modern-app', required: true },
+				method: { value: '' },
+			},
+			label: function () {
+				return this.name || this.method || 'slack api'
+			},
+		})
+
+		RED.nodes.registerType('slack-modern-file', {
+			category: 'slack',
+			paletteLabel: 'slack file',
+			color,
+			icon,
+			inputs: 1,
+			outputs: 1,
+			inputLabels: 'url',
+			outputLabels: 'buffer',
+			defaults: {
+				name: { value: '' },
+				app: { value: '', type: 'slack-modern-app', required: true },
+			},
+			label: function () {
+				return this.name || 'slack file'
+			},
+		})
+	})()
+</script>
+
+<script type="text/html" data-template-name="slack-modern-app">
+	<div class="form-row">
+		<label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-config-input-name" placeholder="Workspace" />
+	</div>
+	<div class="form-row">
+		<label for="node-config-input-botToken"
+			><i class="fa fa-key"></i> Bot token</label
+		>
+		<input type="password" id="node-config-input-botToken" placeholder="xoxb-…" />
+	</div>
+	<div class="form-row">
+		<label for="node-config-input-appToken"
+			><i class="fa fa-plug"></i> App token</label
+		>
+		<input type="password" id="node-config-input-appToken" placeholder="xapp-…" />
+	</div>
+	<div class="form-tips">
+		The app token (with <code>connections:write</code>) is only needed for
+		<b>slack in</b> nodes. Tokens are stored as credentials and are not part of
+		flow exports.
+	</div>
+</script>
+<script type="text/html" data-help-name="slack-modern-app">
+	<p>
+		Connection to a modern Slack app. One Socket Mode connection is shared by
+		all nodes using this configuration.
+	</p>
+	<h3>Configuration</h3>
+	<dl class="message-properties">
+		<dt>Bot token <span class="property-type">xoxb-…</span></dt>
+		<dd>From <i>OAuth &amp; Permissions</i>. Used for Web API calls, lookups and file downloads.</dd>
+		<dt class="optional">App token <span class="property-type">xapp-…</span></dt>
+		<dd>
+			From <i>Basic Information → App-Level Tokens</i> with the
+			<code>connections:write</code> scope. Required for receiving events.
+		</dd>
+	</dl>
+	<p>
+		Slack spreads events across all open Socket Mode connections of one app.
+		Do not run another Socket Mode client for the same app, otherwise some
+		events will not reach Node-RED.
+	</p>
+</script>
+
+<script type="text/html" data-template-name="slack-modern-in">
+	<div class="form-row">
+		<label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-input-name" placeholder="Name" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-app"><i class="fa fa-slack"></i> Slack app</label>
+		<input type="text" id="node-input-app" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-events"><i class="fa fa-filter"></i> Events</label>
+		<input type="text" id="node-input-events" placeholder="message, reaction_added" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-enrich">&nbsp;</label>
+		<label for="node-input-enrich" style="width: auto">
+			<input type="checkbox" id="node-input-enrich" style="width: auto" />
+			Add <code>userObject</code> and <code>channelObject</code>
+		</label>
+	</div>
+	<div class="form-tips">Leave events blank to receive all events.</div>
+</script>
+<script type="text/html" data-help-name="slack-modern-in">
+	<p>Receives events from Slack over Socket Mode.</p>
+	<h3>Outputs</h3>
+	<dl class="message-properties">
+		<dt>payload <span class="property-type">object</span></dt>
+		<dd>
+			The complete Slack event as delivered by the Events API, including
+			<code>ts</code>, <code>thread_ts</code>, <code>files</code>,
+			<code>blocks</code> and <code>subtype</code>. With enrichment enabled,
+			<code>payload.userObject</code> (<code>users.info</code>) and
+			<code>payload.channelObject</code> (<code>conversations.info</code>) are
+			added.
+		</dd>
+		<dt>topic <span class="property-type">string</span></dt>
+		<dd>Event type, e.g. <code>message</code>.</dd>
+		<dt>slack <span class="property-type">object</span></dt>
+		<dd>
+			<code>envelopeType</code> (<code>events_api</code>,
+			<code>interactive</code>, <code>slash_commands</code>) and the rest of the
+			event envelope (<code>event_id</code>, <code>team_id</code>, …).
+		</dd>
+	</dl>
+	<h3>Configuration</h3>
+	<dl class="message-properties">
+		<dt class="optional">Events</dt>
+		<dd>Comma separated event types to pass through. Blank passes everything.</dd>
+	</dl>
+	<h3>Details</h3>
+	<p>
+		Events are acknowledged immediately. Subscribe to the events in your app
+		settings under <i>Event Subscriptions</i>. Enrichment needs the
+		<code>users:read</code> and <code>channels:read</code> (or
+		<code>groups:read</code>) scopes; when a scope is missing, the event is sent
+		without the extra objects and a warning is logged.
+	</p>
+</script>
+
+<script type="text/html" data-template-name="slack-modern-api">
+	<div class="form-row">
+		<label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-input-name" placeholder="Name" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-app"><i class="fa fa-slack"></i> Slack app</label>
+		<input type="text" id="node-input-app" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-method"><i class="fa fa-code"></i> Method</label>
+		<input type="text" id="node-input-method" placeholder="msg.topic" />
+	</div>
+</script>
+<script type="text/html" data-help-name="slack-modern-api">
+	<p>Calls any Slack Web API method.</p>
+	<h3>Inputs</h3>
+	<dl class="message-properties">
+		<dt>topic <span class="property-type">string</span></dt>
+		<dd>Method name, e.g. <code>chat.postMessage</code>. Ignored when the method is set in the node.</dd>
+		<dt>payload <span class="property-type">object</span></dt>
+		<dd>Method arguments, e.g. <code>{ "channel": "C0123", "text": "Hi" }</code>.</dd>
+	</dl>
+	<h3>Outputs</h3>
+	<dl class="message-properties">
+		<dt>payload <span class="property-type">object</span></dt>
+		<dd>The Slack API response.</dd>
+	</dl>
+	<h3>Details</h3>
+	<p>
+		Failed calls raise an error that can be handled with a <i>catch</i> node.
+		Customising <code>username</code> or <code>icon_emoji</code> in
+		<code>chat.postMessage</code> requires the <code>chat:write.customize</code>
+		scope.
+	</p>
+</script>
+
+<script type="text/html" data-template-name="slack-modern-file">
+	<div class="form-row">
+		<label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-input-name" placeholder="Name" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-app"><i class="fa fa-slack"></i> Slack app</label>
+		<input type="text" id="node-input-app" />
+	</div>
+</script>
+<script type="text/html" data-help-name="slack-modern-file">
+	<p>Downloads a private Slack file using the bot token.</p>
+	<h3>Inputs</h3>
+	<dl class="message-properties">
+		<dt>url <span class="property-type">string</span></dt>
+		<dd>
+			File URL, typically <code>files[].url_private</code>. When missing, a
+			string <code>msg.payload</code> is used.
+		</dd>
+	</dl>
+	<h3>Outputs</h3>
+	<dl class="message-properties">
+		<dt>payload <span class="property-type">buffer</span></dt>
+		<dd>File contents.</dd>
+		<dt>contentType <span class="property-type">string</span></dt>
+		<dd>MIME type reported by Slack.</dd>
+		<dt>statusCode <span class="property-type">number</span></dt>
+		<dd>HTTP status code.</dd>
+	</dl>
+	<h3>Details</h3>
+	<p>
+		Requires the <code>files:read</code> scope. The token is only ever sent to
+		<code>*.slack.com</code> over HTTPS.
+	</p>
+</script>

@@ -1,0 +1,60 @@
+[
+	{
+		"id": "5d1c1a0e7b2a4c01",
+		"type": "slack-modern-in",
+		"name": "",
+		"app": "5d1c1a0e7b2a4c09",
+		"events": "message",
+		"enrich": true,
+		"x": 120,
+		"y": 80,
+		"wires": [["5d1c1a0e7b2a4c02"]]
+	},
+	{
+		"id": "5d1c1a0e7b2a4c02",
+		"type": "switch",
+		"name": "Not from bot",
+		"property": "payload.bot_id",
+		"propertyType": "msg",
+		"rules": [{ "t": "null" }],
+		"checkall": "true",
+		"repair": false,
+		"outputs": 1,
+		"x": 300,
+		"y": 80,
+		"wires": [["5d1c1a0e7b2a4c03"]]
+	},
+	{
+		"id": "5d1c1a0e7b2a4c03",
+		"type": "change",
+		"name": "Reply in thread",
+		"rules": [
+			{ "t": "set", "p": "topic", "pt": "msg", "to": "chat.postMessage", "tot": "str" },
+			{
+				"t": "set",
+				"p": "payload",
+				"pt": "msg",
+				"to": "{\"channel\": payload.channel, \"thread_ts\": payload.ts, \"text\": \"Hi \" & payload.userObject.real_name & \"!\"}",
+				"tot": "jsonata"
+			}
+		],
+		"x": 490,
+		"y": 80,
+		"wires": [["5d1c1a0e7b2a4c04"]]
+	},
+	{
+		"id": "5d1c1a0e7b2a4c04",
+		"type": "slack-modern-api",
+		"name": "",
+		"app": "5d1c1a0e7b2a4c09",
+		"method": "",
+		"x": 680,
+		"y": 80,
+		"wires": [[]]
+	},
+	{
+		"id": "5d1c1a0e7b2a4c09",
+		"type": "slack-modern-app",
+		"name": "My workspace"
+	}
+]
