@@ -214,6 +214,88 @@ describe('node-red-contrib-slack-modern', () => {
 		assert.equal(authCalls, 1)
 	})
 
+	it('filters by channel name or ID', async () => {
+		await helper.load(
+			slackModern,
+			flow([
+				{
+					id: 'in',
+					type: 'slack-modern-in',
+					app: 'app',
+					enrich: false,
+					channels: '#Jedna-paní-povídala, C0DEPLOY1',
+					wires: [['out']],
+				},
+			]),
+			credentials,
+		)
+		const app = helper.getNode('app').slackApp
+		const names = { C0PANI001: 'jedna-paní-povídala', C0OPS0001: 'ops' }
+		app.web.conversations.info = async ({ channel }) => ({
+			channel: { id: channel, name: names[channel] },
+		})
+
+		const out = helper.getNode('out')
+		const seen = []
+		out.on('input', (message) => seen.push(message.payload.ts))
+
+		const events = [
+			{ type: 'message', channel: 'C0PANI001', ts: '1' },
+			{ type: 'message', channel: 'C0DEPLOY1', ts: '2' },
+			{ type: 'message', channel: 'C0OPS0001', ts: '3' },
+			{ type: 'reaction_added', item: { channel: 'C0PANI001' }, ts: '4' },
+			{ type: 'team_join', ts: '5' },
+		]
+		for (const event of events) {
+			socket.deliver('events_api', { event })
+		}
+		await new Promise((resolve) => setTimeout(resolve, 50))
+
+		assert.deepEqual(seen.sort(), ['1', '2', '4'])
+	})
+
+	for (const [messages, expected] of [
+		['all', ['1', '2', '3', '4', '5', '6']],
+		['new', ['1', '2', '3', '6']],
+		['top-level', ['1', '3', '6']],
+		['replies', ['2', '6']],
+	]) {
+		it(`filters messages: ${messages}`, async () => {
+			await helper.load(
+				slackModern,
+				flow([
+					{
+						id: 'in',
+						type: 'slack-modern-in',
+						app: 'app',
+						enrich: false,
+						messages,
+						wires: [['out']],
+					},
+				]),
+				credentials,
+			)
+			const out = helper.getNode('out')
+			const seen = []
+			out.on('input', (message) => seen.push(message.payload.ts))
+
+			const events = [
+				{ type: 'message', ts: '1' },
+				{ type: 'message', ts: '2', thread_ts: '1' },
+				{ type: 'message', subtype: 'file_share', ts: '3' },
+				{ type: 'message', subtype: 'message_changed', ts: '4' },
+				{ type: 'message', subtype: 'channel_join', ts: '5' },
+				{ type: 'reaction_added', ts: '6' },
+			]
+			for (const event of events) {
+				socket.deliver('events_api', { event })
+			}
+			await new Promise((resolve) => setTimeout(resolve, 50))
+
+			assert.deepEqual(seen.sort(), expected)
+		})
+	}
+
 	it('calls the method from msg.topic with msg.payload as arguments', async () => {
 		await helper.load(
 			slackModern,

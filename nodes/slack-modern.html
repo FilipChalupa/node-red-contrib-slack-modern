@@ -31,11 +31,14 @@
 				name: { value: '' },
 				app: { value: '', type: 'slack-modern-app', required: true },
 				events: { value: '' },
+				channels: { value: '' },
+				messages: { value: 'all' },
 				enrich: { value: true },
 				ignoreOwn: { value: false },
 			},
 			label: function () {
-				return this.name || (this.events ? this.events : appLabel.call(this))
+				const filters = [this.events, this.channels].filter(Boolean).join(' ')
+				return this.name || filters || appLabel.call(this)
 			},
 		})
 
@@ -138,6 +141,19 @@
 		<input type="text" id="node-input-events" placeholder="message, reaction_added" />
 	</div>
 	<div class="form-row">
+		<label for="node-input-channels"><i class="fa fa-hashtag"></i> Channels</label>
+		<input type="text" id="node-input-channels" placeholder="#ops, #deploy, C0123ABCD" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-messages"><i class="fa fa-comment"></i> Messages</label>
+		<select id="node-input-messages">
+			<option value="all">All message events</option>
+			<option value="new">New messages only</option>
+			<option value="top-level">New messages outside threads</option>
+			<option value="replies">New thread replies</option>
+		</select>
+	</div>
+	<div class="form-row">
 		<label for="node-input-enrich">&nbsp;</label>
 		<label for="node-input-enrich" style="width: auto">
 			<input type="checkbox" id="node-input-enrich" style="width: auto" />
@@ -151,7 +167,9 @@
 			Ignore events caused by this app
 		</label>
 	</div>
-	<div class="form-tips">Leave events blank to receive all events.</div>
+	<div class="form-tips">
+		Leave events and channels blank to receive everything.
+	</div>
 </script>
 <script type="text/html" data-help-name="slack-modern-in">
 	<p>Receives events from Slack over Socket Mode.</p>
@@ -179,6 +197,20 @@
 	<dl class="message-properties">
 		<dt class="optional">Events</dt>
 		<dd>Comma separated event types to pass through. Blank passes everything.</dd>
+		<dt class="optional">Channels</dt>
+		<dd>
+			Comma separated channel names (<code>#ops</code>) or IDs
+			(<code>C0123ABCD</code>). Events without a channel are dropped when set.
+			Names are resolved with <code>conversations.info</code>, which needs the
+			<code>channels:read</code> or <code>groups:read</code> scope.
+		</dd>
+		<dt class="optional">Messages</dt>
+		<dd>
+			Narrows <code>message</code> events, other events are not affected.
+			<i>New messages only</i> drops edits, deletions, joins and other
+			<code>subtype</code> notifications. The thread options additionally keep
+			only messages outside threads or only replies in threads.
+		</dd>
 		<dt class="optional">Ignore events caused by this app</dt>
 		<dd>
 			Drops the app's own messages (including ones posted with a custom

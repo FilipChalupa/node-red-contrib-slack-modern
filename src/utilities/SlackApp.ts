@@ -116,6 +116,11 @@ export class SlackApp {
 		)
 	}
 
+	async channelName(id: string): Promise<string | undefined> {
+		const channel = (await this.channels.get(id)) as { name?: string } | undefined
+		return channel?.name
+	}
+
 	async download(url: string) {
 		const parsed = new URL(url)
 		if (parsed.protocol !== 'https:' || !slackFileHost.test(parsed.hostname)) {

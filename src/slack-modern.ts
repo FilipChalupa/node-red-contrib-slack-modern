@@ -1,4 +1,12 @@
 import * as NodeRED from 'node-red'
+import {
+	channelIdOf,
+	isChannelId,
+	matchesMessageFilter,
+	normalizeChannelName,
+	parseList,
+	type MessageFilter,
+} from './utilities/filters'
 import { SlackApp } from './utilities/SlackApp'
 
 interface SlackAppCredentials {
@@ -15,6 +23,8 @@ interface SlackInNodeConfiguration extends NodeRED.NodeDef {
 	events: string
 	enrich: boolean
 	ignoreOwn?: boolean
+	channels?: string
+	messages?: MessageFilter
 }
 
 interface SlackApiNodeConfiguration extends NodeRED.NodeDef {
@@ -83,19 +93,49 @@ export = function (RED: NodeRED.NodeAPI) {
 		if (!slackApp) {
 			return
 		}
-		const allowedTypes = new Set(
-			(configuration.events ?? '')
-				.split(',')
-				.map((type) => type.trim())
-				.filter(Boolean),
+		const allowedTypes = new Set(parseList(configuration.events))
+		const channels = parseList(configuration.channels)
+		const channelIds = new Set(channels.filter(isChannelId))
+		const channelNames = new Set(
+			channels.filter((channel) => !isChannelId(channel)).map(normalizeChannelName),
 		)
+
+		const matchesChannel = async (payload: Record<string, any>) => {
+			if (channels.length === 0) {
+				return true
+			}
+			const id = channelIdOf(payload)
+			if (!id) {
+				return false
+			}
+			if (channelIds.has(id)) {
+				return true
+			}
+			if (channelNames.size === 0) {
+				return false
+			}
+			const name = await slackApp.channelName(id)
+			return name !== undefined && channelNames.has(normalizeChannelName(name))
+		}
 
 		const unsubscribeStatus = slackApp.onStatus((status) => this.status(status))
 		const unsubscribeIncoming = slackApp.onIncoming(async (incoming) => {
 			if (allowedTypes.size > 0 && !allowedTypes.has(incoming.type)) {
 				return
 			}
+			if (
+				!matchesMessageFilter(
+					incoming.type,
+					incoming.payload,
+					configuration.messages,
+				)
+			) {
+				return
+			}
 			try {
+				if (!(await matchesChannel(incoming.payload))) {
+					return
+				}
 				if (
 					configuration.ignoreOwn === true &&
 					incoming.envelopeType === 'events_api' &&

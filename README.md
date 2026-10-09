@@ -11,7 +11,7 @@ Classic Slack apps and the RTM API they rely on are being phased out. This packa
 | Node           | Purpose                                                                                                       |
 | -------------- | ------------------------------------------------------------------------------------------------------------- |
 | **slack app**  | Config node with the bot token (`xoxb-…`) and app token (`xapp-…`), stored as credentials, not in flow exports. |
-| **slack in**   | Emits every Slack event. `msg.payload` is the complete event (`ts`, `thread_ts`, `files`, `blocks`, …) plus `userObject` and `channelObject`. |
+| **slack in**   | Emits Slack events. `msg.payload` is the complete event (`ts`, `thread_ts`, `files`, `blocks`, …) plus `userObject` and `channelObject`. Optionally filters by event type, channel (`#ops` or ID), message kind (new, outside threads, thread replies) and drops the app's own messages. |
 | **slack api**  | Calls any Web API method: `msg.topic` is the method, `msg.payload` its arguments, the response comes out as `msg.payload`. |
 | **slack file** | Downloads a private file (`files[].url_private` in `msg.url`) using the bot token. Outputs a buffer.         |
 
